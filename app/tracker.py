@@ -152,10 +152,9 @@ if __name__ == "__main__":
 
     try:
         while True:
-            sleep(60*5 - 4)
+            sleep(60*5 - 1)
             winsound.Beep(frequency, duration)
-            sleep(3)
-            ss_name = screenshot()
+            ss_name = screenshot() 
             sharable_link = upload_screenshot(ss_name)
             share_ss_folder(sharable_link)
     except KeyboardInterrupt as ke:
