@@ -1,4 +1,3 @@
-import os
 from time import sleep
 from pathlib import Path
 from PIL import ImageGrab
@@ -6,7 +5,7 @@ from datetime import datetime
 
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
-from googleapiclient.http  import MediaFileUpload
+from googleapiclient.http import MediaFileUpload
 
 import winsound
 frequency = 2500
@@ -30,8 +29,9 @@ values_api = spreadsheets.values()
 request = values_api.get(spreadsheetId=sheet_uid, range="'Time log'!A:B")
 data = request.execute()["values"]
 
-row = len(data) + 1
-# col = len(data[-1])
+row: int = len(data) + 1
+folder_id: str | None = None
+
 
 def start_time() -> dict[str, str]:
     values: list[str] = [datetime.now().strftime("%Y/%m/%d %H:%M"), "Currently working..."]
@@ -87,14 +87,18 @@ def get_drive_folder() -> str:
 
     # Define the search query
     query = f"name = '{folder_name}' and mimeType = 'application/vnd.google-apps.folder'"
-    
+
     folder_permission: dict = {
         'type': 'anyone',
         'role': 'reader'
     }
 
     # Search for the folder
-    results = drive_service.files().list(q=query, spaces='drive', fields='files(id, name)').execute()
+    results = drive_service.files().list(
+        q=query,
+        spaces='drive',
+        fields='files(id, name)'
+    ).execute()
     items = results.get('files', [])
 
     if items:
@@ -113,6 +117,7 @@ def get_drive_folder() -> str:
 
     return folder_id
 
+
 def screenshot() -> str:
     ss_name: str = datetime.now().strftime("%Y_%m_%d__%H_%M.jpg")
     screenshot = ImageGrab.grab(all_screens=True)
@@ -121,20 +126,20 @@ def screenshot() -> str:
     return ss_name
 
 
-def upload_screenshot(ss_name: str) -> str:
-    folder_id = get_drive_folder()
+def upload_screenshot(ss_name: str, folder_id: str | None) -> tuple[str, str]:
+    folder_id = get_drive_folder() if folder_id is None else folder_id
     ss_path = Path("app") / "screenshots" / ss_name
 
     file_metadata = {
         'name':  ss_name,
         "parents": [folder_id]
     }
-    
+
     media = MediaFileUpload(str(ss_path), mimetype=None)
-    file = drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
+    drive_service.files().create(body=file_metadata, media_body=media, fields='id').execute()
 
     shareable_link = f"https://drive.google.com/drive/folders/{folder_id}?usp=sharing"
-    return shareable_link
+    return shareable_link, folder_id
 
 
 def share_ss_folder(sharable_link: str):
@@ -147,6 +152,7 @@ def share_ss_folder(sharable_link: str):
         }
     ).execute()
 
+
 if __name__ == "__main__":
     task_info = start_time()
 
@@ -154,8 +160,8 @@ if __name__ == "__main__":
         while True:
             sleep(60*5 - 1)
             winsound.Beep(frequency, duration)
-            ss_name = screenshot() 
-            sharable_link = upload_screenshot(ss_name)
+            ss_name = screenshot()
+            sharable_link, folder_id = upload_screenshot(ss_name, folder_id)
             share_ss_folder(sharable_link)
-    except KeyboardInterrupt as ke:
+    except KeyboardInterrupt:
         end_time(row, task_info["task"])

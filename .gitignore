@@ -8,4 +8,7 @@ wheels/
 
 # venv
 .venv
+
+# secrets
 app/key.json
+app/screenshots/*
