@@ -21,8 +21,6 @@ credentials = service_account.Credentials.from_service_account_file(
     ]
 )
 sheets_service = build("sheets", "v4", credentials=credentials)
-drive_service = build("drive", "v3", credentials=credentials)
-
 
 spreadsheets = sheets_service.spreadsheets()
 values_api = spreadsheets.values()
@@ -34,6 +32,10 @@ folder_id: str | None = None
 
 
 def start_time() -> dict[str, str]:
+    sheets_service = build("sheets", "v4", credentials=credentials)
+    spreadsheets = sheets_service.spreadsheets()
+    values_api = spreadsheets.values()
+
     values: list[str] = [datetime.now().strftime("%Y/%m/%d %H:%M"), "Currently working..."]
     values_api.update(
         spreadsheetId=sheet_uid,
@@ -66,6 +68,10 @@ def start_time() -> dict[str, str]:
 
 
 def end_time(row: int, task: str):
+    sheets_service = build("sheets", "v4", credentials=credentials)
+    spreadsheets = sheets_service.spreadsheets()
+    values_api = spreadsheets.values()
+
     values_api.update(
         spreadsheetId=sheet_uid,
         range=f"'Time log'!B{row}:F{row}",
@@ -82,6 +88,7 @@ def end_time(row: int, task: str):
 
 
 def get_drive_folder() -> str:
+    drive_service = build("drive", "v3", credentials=credentials)
     # Define the folder name you want to check for
     folder_name = datetime.now().strftime("%Y_%m_%d__%H_00")
 
@@ -127,6 +134,7 @@ def screenshot() -> str:
 
 
 def upload_screenshot(ss_name: str, folder_id: str | None) -> tuple[str, str]:
+    drive_service = build("drive", "v3", credentials=credentials)
     folder_id = get_drive_folder() if folder_id is None else folder_id
     ss_path = Path("app") / "screenshots" / ss_name
 
@@ -143,6 +151,9 @@ def upload_screenshot(ss_name: str, folder_id: str | None) -> tuple[str, str]:
 
 
 def share_ss_folder(sharable_link: str):
+    sheets_service = build("sheets", "v4", credentials=credentials)
+    spreadsheets = sheets_service.spreadsheets()
+    values_api = spreadsheets.values()
     values_api.update(
         spreadsheetId=sheet_uid,
         range=f"'Time log'!H{row}",
@@ -158,7 +169,7 @@ if __name__ == "__main__":
 
     try:
         while True:
-            sleep(60*5 - 1)
+            sleep(4 - 1)
             winsound.Beep(frequency, duration)
             ss_name = screenshot()
             sharable_link, folder_id = upload_screenshot(ss_name, folder_id)
